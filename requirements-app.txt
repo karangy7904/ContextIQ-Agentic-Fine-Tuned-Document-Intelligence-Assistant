@@ -1,11 +1,23 @@
 # Compatible Python 3.11 application stack
+
 streamlit==1.42.0
+
 transformers==4.48.3
 peft==0.14.0
 torch==2.5.1
+
 sentence-transformers==3.4.1
 faiss-cpu==1.10.0
+
 pymupdf==1.25.3
+pypdf
+
 numpy==1.26.4
 python-dotenv==1.0.1
 
+groq
+
+langchain-core
+langchain-community
+langchain-huggingface
+langchain-text-splitters
