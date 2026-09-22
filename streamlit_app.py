@@ -655,20 +655,11 @@ if (
                     is not None
                 ):
 
-                    st.write(
-                        "**Best source:**",
-                        (
-                            f"{source_doc.metadata.get(
-                                'source',
-                                'Unknown'
-                            )}, "
-                            f"page "
-                            f"{source_doc.metadata.get(
-                                'page',
-                                '?'
-                            )}"
-                        )
-                    )
+                    source_name = source_doc.metadata.get("source","Unknown")
+
+                    page_number = source_doc.metadata.get("page","?")
+                    
+                    st.write("**Best source:**",f"{source_name}, page {page_number}")
 
         # ====================================================
         # VERIFICATION DETAILS
