@@ -1,10 +1,10 @@
 import os
+import torch
 
 import streamlit as st
 
 from groq import Groq
 from pypdf import PdfReader
-import torch
 
 from transformers import (
     AutoTokenizer,
@@ -14,12 +14,15 @@ from transformers import (
 from peft import PeftModel
 
 from langchain_core.documents import Document
+
 from langchain_text_splitters import (
     RecursiveCharacterTextSplitter
 )
+
 from langchain_community.vectorstores import (
     FAISS
 )
+
 from langchain_huggingface import (
     HuggingFaceEmbeddings
 )
