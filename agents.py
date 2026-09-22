@@ -1,3 +1,4 @@
+import torch
 import json
 import os
 from collections import defaultdict
@@ -255,70 +256,80 @@ def fine_tuned_qa_agent(
     qa_pipeline
 ):
 
-    candidates = []
+    model = qa_pipeline["model"]
+    tokenizer = qa_pipeline["tokenizer"]
 
-    for doc in documents:
-
-        context = (
-            doc.page_content.strip()
-        )
-
-        if not context:
-            continue
-
-        try:
-
-            result = qa_pipeline(
-                question=question,
-                context=context
-            )
-
-            answer = (
-                result
-                .get(
-                    "answer",
-                    ""
-                )
-                .strip()
-            )
-
-            score = float(
-                result.get(
-                    "score",
-                    0
-                )
-            )
-
-            if answer:
-
-                candidates.append(
-                    {
-                        "answer": answer,
-                        "score": score,
-                        "document": doc
-                    }
-                )
-
-        except Exception:
-            continue
-
-    if not candidates:
-
-        return {
-            "answer":
-                "No confident answer was found.",
-            "score": 0,
-            "document": None
-        }
-
-    candidates.sort(
-        key=lambda item:
-            item["score"],
-        reverse=True
+    context = _context_from_documents(
+        documents,
+        max_chars=12000
     )
 
-    return candidates[0]
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Answer only from the supplied "
+                "document context. If the answer "
+                "cannot be found in the context, "
+                "say that the document does not "
+                "provide enough information."
+            )
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Context:\n{context}\n\n"
+                f"Question:\n{question}"
+            )
+        }
+    ]
 
+    prompt = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+
+    inputs = tokenizer(
+        prompt,
+        return_tensors="pt"
+    )
+
+    inputs = {
+        key: value.to(model.device)
+        for key, value in inputs.items()
+    }
+
+    with torch.no_grad():
+
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=256,
+            do_sample=False,
+            temperature=None,
+            top_p=None,
+            pad_token_id=tokenizer.eos_token_id
+        )
+
+    generated_tokens = outputs[
+        0,
+        inputs["input_ids"].shape[1]:
+    ]
+
+    answer = tokenizer.decode(
+        generated_tokens,
+        skip_special_tokens=True
+    ).strip()
+
+    return {
+        "answer": answer,
+        "score": None,
+        "document": (
+            documents[0]
+            if documents
+            else None
+        )
+    }
 
 # ============================================================
 # 4. GROUNDED RESPONSE AGENT
