@@ -4,7 +4,14 @@ import streamlit as st
 
 from groq import Groq
 from pypdf import PdfReader
-from transformers import pipeline
+import torch
+
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM
+)
+
+from peft import PeftModel
 
 from langchain_core.documents import Document
 from langchain_text_splitters import (
@@ -113,33 +120,39 @@ def load_embeddings():
 @st.cache_resource
 def load_qa_model():
 
-    # --------------------------------------------------------
-    # IMPORTANT
-    # --------------------------------------------------------
-    #
-    # Set FINE_TUNED_QA_MODEL to your own
-    # Hugging Face model repository or local
-    # fine-tuned model folder.
-    #
-    # Example:
-    #
-    # FINE_TUNED_QA_MODEL =
-    # "karangy7904/my-finetuned-qa-model"
-    #
-    # If it is not configured, the app uses
-    # a standard QA model so the app can run.
-    # --------------------------------------------------------
+    base_model_name = get_setting(
+        "BASE_MODEL",
+        "Qwen/Qwen2.5-0.5B-Instruct"
+    )
 
-    model_name = get_setting(
+    adapter_path = get_setting(
         "FINE_TUNED_QA_MODEL",
-        "deepset/roberta-base-squad2"
+        "models/docuchat-lora"
     )
 
-    return pipeline(
-        task="question-answering",
-        model=model_name,
-        tokenizer=model_name
+    tokenizer = AutoTokenizer.from_pretrained(
+        adapter_path
     )
+
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    base_model = AutoModelForCausalLM.from_pretrained(
+        base_model_name,
+        torch_dtype=torch.float32
+    )
+
+    model = PeftModel.from_pretrained(
+        base_model,
+        adapter_path
+    )
+
+    model.eval()
+
+    return {
+        "model": model,
+        "tokenizer": tokenizer
+    }
 
 
 # ============================================================
