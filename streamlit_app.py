@@ -647,15 +647,9 @@ if (
                     )
                 )
 
-                score = qa_result.get(
-                    "score",
-                    0
-                )
-
-                st.write(
-                    "**QA confidence score:**",
-                    f"{score:.4f}"
-                )
+                score = qa_result.get("score")
+                if score is not None:
+                    st.write("**QA confidence score:**",f"{score:.4f}")
 
                 source_doc = (
                     qa_result.get(
